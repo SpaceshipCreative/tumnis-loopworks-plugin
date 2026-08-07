@@ -1,0 +1,10 @@
+name: verified-brief
+goal: Produce a concise, verified status brief
+criteria:
+  - Names the current outcome, blocker, and next action
+  - Contains no placeholders or unsupported claims
+  - Stays under 150 words
+checks:
+  - test -s "$HOME/brief.md"
+  - python3 -c "from pathlib import Path; assert len(Path.home().joinpath('brief.md').read_text().split()) < 150"
+max_attempts: 3

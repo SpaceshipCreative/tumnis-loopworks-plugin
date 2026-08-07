@@ -1,0 +1,24 @@
+workflow: research-diamond
+nodes:
+  source_a:
+    task: Research option A using primary sources. Return concise Markdown with citations.
+    output: source-a.md
+    checks:
+      - test -s "{output}"
+  source_b:
+    task: Research option B using primary sources. Return concise Markdown with citations.
+    output: source-b.md
+    checks:
+      - test -s "{output}"
+  reviewer:
+    task: Independently verify both artifacts. Identify supported claims, weak claims, and contradictions.
+    depends_on: [source_a, source_b]
+    output: reviewer.md
+    checks:
+      - test -s "{output}"
+  synthesis:
+    task: Produce a verdict-bound comparison that honors the reviewer's findings.
+    depends_on: [source_a, source_b, reviewer]
+    output: synthesis.md
+    checks:
+      - test -s "{output}"
