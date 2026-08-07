@@ -10,7 +10,7 @@ import textwrap
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
-HOME = Path(tempfile.mkdtemp(prefix="tumnus-loopworks-test-"))
+HOME = Path(tempfile.mkdtemp(prefix="tumnis-loopworks-test-"))
 ENV = os.environ | {"HOME": str(HOME)}
 LOOPS = HOME / ".hermes/loops"
 GRAPHS = HOME / ".hermes/graphs"
@@ -93,7 +93,7 @@ def main():
                 output: a.md
         """))
         assert "unknown dependencies" in run([graph, "plan", invalid], 1).stderr
-        print("PASS: all Tumnus Loopworks regression gates")
+        print("PASS: all Tumnis Loopworks regression gates")
     finally:
         shutil.rmtree(HOME)
 

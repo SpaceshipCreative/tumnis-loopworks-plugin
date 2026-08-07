@@ -1,8 +1,10 @@
-# Tumnus Loopworks
+# Tumnis Loopworks
+
+*A quiet guide through branching systems, turning uncertain paths into verified outcomes.*
 
 Verified loops and graph orchestration for [Hermes Agent](https://github.com/NousResearch/hermes-agent).
 
-Tumnus Loopworks gives Hermes three small, inspectable building blocks:
+Tumnis Loopworks gives Hermes three small, inspectable building blocks:
 
 - **Loop runner** — bounded iterations, deterministic gates, checkpoints, `NO_CHANGE`, and hard attempt limits.
 - **Graph runner** — validated YAML DAGs, parallel execution waves, typed file handoffs, and fresh-context reviewers.
@@ -20,8 +22,8 @@ No orchestration theater: simple prompts stay simple. Use a loop for repeated ch
 ## Install
 
 ```bash
-git clone https://github.com/SpaceshipCreative/tumnus-loopworks.git
-cd tumnus-loopworks
+git clone https://github.com/SpaceshipCreative/tumnis-loopworks.git
+cd tumnis-loopworks
 ./install.sh
 ```
 

@@ -44,7 +44,7 @@ soul.write_text(text + "\n\n" + section + "\n")
 PY
 fi
 
-printf 'Installed Tumnus Loopworks\n'
+printf 'Installed Tumnis Loopworks\n'
 printf '  runners: %s/bin\n' "$HOME"
 printf '  skill:   %s/skills/autonomous-ai-agents/loop-graph-system/SKILL.md\n' "$HERMES_HOME"
 $WITH_PREFLIGHT && printf '  preflight: %s/SOUL.md\n' "$HERMES_HOME"
