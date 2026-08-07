@@ -24,10 +24,43 @@ def run(args, expected=0):
     return result
 
 
+def run_with_env(args, env, expected=0):
+    result = subprocess.run([str(a) for a in args], env=env, text=True, capture_output=True)
+    assert result.returncode == expected, (args, result.returncode, result.stdout, result.stderr)
+    return result
+
+
 def main():
     try:
         for script in SCRIPTS.glob("*.py"):
             py_compile.compile(str(script), doraise=True)
+
+        installer = ROOT / "install.sh"
+        install_home = HOME / "default-install"
+        install_hermes = install_home / ".hermes"
+        install_hermes.mkdir(parents=True)
+        soul = install_hermes / "SOUL.md"
+        soul.write_text("# Existing Identity\n\nKeep this section.\n")
+        install_env = os.environ | {
+            "HOME": str(install_home),
+            "HERMES_HOME": str(install_hermes),
+        }
+        run_with_env([installer], install_env)
+        assert soul.read_text().count("# Loop/Graph Preflight") == 1
+        assert "Never require the user to name the skill" in soul.read_text()
+        assert list(install_hermes.glob("SOUL.md.backup-loopworks-*"))
+        run_with_env([installer], install_env)
+        assert soul.read_text().count("# Loop/Graph Preflight") == 1
+
+        opt_out_home = HOME / "opt-out-install"
+        opt_out_hermes = opt_out_home / ".hermes"
+        opt_out_env = os.environ | {
+            "HOME": str(opt_out_home),
+            "HERMES_HOME": str(opt_out_hermes),
+        }
+        run_with_env([installer, "--no-preflight"], opt_out_env)
+        assert not (opt_out_hermes / "SOUL.md").exists()
+        assert (opt_out_hermes / "skills/autonomous-ai-agents/loop-graph-system/SKILL.md").is_file()
 
         artifact = HOME / "artifact.txt"
         (LOOPS / "gate.yaml").write_text(textwrap.dedent(f"""

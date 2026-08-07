@@ -3,12 +3,12 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
-WITH_PREFLIGHT=false
+WITH_PREFLIGHT=true
 
-if [[ "${1:-}" == "--with-preflight" ]]; then
-  WITH_PREFLIGHT=true
+if [[ "${1:-}" == "--no-preflight" ]]; then
+  WITH_PREFLIGHT=false
 elif [[ -n "${1:-}" ]]; then
-  echo "usage: ./install.sh [--with-preflight]" >&2
+  echo "usage: ./install.sh [--no-preflight]" >&2
   exit 2
 fi
 

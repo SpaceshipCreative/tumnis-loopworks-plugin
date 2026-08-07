@@ -2,24 +2,27 @@
 
 *A quiet guide through branching systems, turning uncertain paths into verified outcomes.*
 
-Verified loops and graph orchestration for [Hermes Agent](https://github.com/NousResearch/hermes-agent).
+Tumnis Loopworks adds automatic loop and graph orchestration to [Hermes Agent](https://github.com/NousResearch/hermes-agent).
 
-Tumnis Loopworks gives Hermes three small, inspectable building blocks:
+You do not need to invoke a skill, choose a runner, or write workflow YAML. Ask Hermes for the outcome you want. Hermes silently evaluates the request and uses the simplest execution shape that can finish and verify it:
 
-- **Loop runner** — bounded iterations, deterministic gates, checkpoints, `NO_CHANGE`, and hard attempt limits.
-- **Graph runner** — validated YAML DAGs, parallel execution waves, typed file handoffs, and fresh-context reviewers.
-- **Keep-rate gate** — measures whether automation outputs are actually worth keeping and flags workflows below 50%.
+- **DIRECT** — one bounded action
+- **LOOP** — repeated or iterative work with measurable gates and a hard stop
+- **GRAPH** — independent or specialized workstreams with validated handoffs
+- **LOOP+GRAPH** — repeated graph execution with an outer quality gate
 
-No orchestration theater: simple prompts stay simple. Use a loop for repeated checkable work and a graph only when real specialization, parallelism, convergence, or failure isolation earns it.
+Simple requests stay simple. Orchestration is applied only when it earns its keep.
 
-## Requirements
+## Install
+
+### Requirements
 
 - Linux or macOS
 - Python 3.10+
 - [Hermes Agent](https://hermes-agent.nousresearch.com/docs)
 - PyYAML (`python3 -m pip install pyyaml`)
 
-## Install
+### One-time setup
 
 ```bash
 git clone https://github.com/SpaceshipCreative/tumnis-loopworks.git
@@ -29,54 +32,93 @@ cd tumnis-loopworks
 
 The installer:
 
-- copies runners to `~/bin/`
-- installs the skill under `$HERMES_HOME/skills/autonomous-ai-agents/loop-graph-system/`
-- creates loop, graph, and state directories
-- optionally installs the always-on prompt classifier with `./install.sh --with-preflight`
+- installs the Loopworks skill for Hermes
+- installs automatic prompt evaluation in `SOUL.md`
+- copies the loop, graph, and keep-rate runners to `~/bin/`
+- creates the required workflow and state directories
+- backs up an existing `SOUL.md` before changing it
 
-Start a fresh Hermes session or run `/reset` after installation.
+Start a fresh Hermes session or run `/reset` once after installation.
 
-## Quick start: loop
-
-```bash
-cp examples/verified-brief.yaml ~/.hermes/loops/
-loop-runner.py tick verified-brief
-# Do one bounded pass, then:
-loop-runner.py pass verified-brief
-loop-runner.py status verified-brief
-keep-rate.py --strict
-```
-
-`pass` runs every command in the YAML `checks:` list. A failed command rejects the pass and leaves the loop pending.
-
-## Quick start: graph
+To install only the skill and runners without automatic prompt evaluation:
 
 ```bash
-graph-runner.py plan examples/research-diamond.yaml
-graph-runner.py run examples/research-diamond.yaml > /tmp/research-driver.py
+./install.sh --no-preflight
 ```
 
-`run` emits Python for Hermes `execute_code`; it does not call delegates itself. The driver executes one parallel batch per wave, writes declared artifacts, rejects empty outputs, runs handoff checks, and logs successful completion.
+## Quick start
 
-## Architecture
+Ask Hermes normally. That is the primary interface.
 
 ```text
-request
-  |
-  +-- DIRECT: one bounded action
-  +-- LOOP: goal -> act -> deterministic check -> pass/retry/stop
-  +-- GRAPH: fan-out workers -> artifact checks -> fresh reviewer -> synthesis
-  +-- LOOP+GRAPH: scheduled/repeated graph with an outer keep-rate gate
+Research n8n, Zapier, and Make. Verify the important claims and recommend one for a technical team.
 ```
 
-State is stored under `~/.hermes/state/`; workflow definitions live in `~/.hermes/loops/` and `~/.hermes/graphs/`.
+Hermes can recognize the independent research branches, use a graph with a fresh-context verifier, validate the handoffs, and synthesize the result.
+
+```text
+Improve this implementation until the tests pass, but stop after three attempts and report any remaining gaps.
+```
+
+Hermes can recognize the measurable retries, use a bounded loop, run deterministic checks, checkpoint progress, and stop at the declared limit.
+
+```text
+Summarize this paragraph in one sentence.
+```
+
+Hermes handles it directly. No loop. No graph. No theater.
+
+Users may explicitly request a loop, graph, attempt cap, reviewer, or checkpoint when they want tighter control, but explicit invocation is optional.
+
+## What Hermes does
+
+For every request, the installed preflight tells Hermes to:
+
+1. Silently classify the work as DIRECT, LOOP, GRAPH, or LOOP+GRAPH.
+2. Load the Loopworks skill only when orchestration applies.
+3. Choose the smallest viable topology.
+4. Define hard completion criteria and attempt limits for loops.
+5. Validate graph artifacts before dependent work advances.
+6. Retry only failed work instead of replaying successful branches.
+7. Report the verified result—not the internal ceremony.
+
+## Components
+
+- **Loop runner** — bounded iterations, deterministic gates, checkpoints, `NO_CHANGE`, and hard attempt limits.
+- **Graph runner** — validated YAML DAGs, parallel execution waves, typed file handoffs, and fresh-context reviewers.
+- **Keep-rate gate** — measures whether automation outputs are worth keeping and flags workflows below 50%.
+- **Preflight** — gives Hermes the automatic per-prompt decision rule.
+
+State is stored under `~/.hermes/state/`. Workflow definitions live under `~/.hermes/loops/` and `~/.hermes/graphs/`.
+
+## Advanced: manual control
+
+Most users do not need these commands. They are available for debugging, reusable workflow authoring, and explicit operator control.
+
+```bash
+loop-runner.py tick <name>
+loop-runner.py pass|fail|nochange|status|reset <name>
+graph-runner.py plan|run <workflow.yaml>
+keep-rate.py [--strict|--json]
+```
+
+Example definitions are available in [`examples/`](examples/).
+
+`graph-runner.py run` emits a Hermes `execute_code` driver; it does not directly call delegates. Hermes executes that driver as part of orchestration.
 
 ## Honest boundaries
 
 - The graph runner executes static DAG edges.
-- Conditional reject-routing is performed by Hermes after reading a router/checker artifact.
-- Failed-node retry is orchestrator-driven; successful waves are not rerun.
-- The preflight is a compact decision rule, not a second orchestration engine.
+- Hermes performs conditional routing after reading router or checker artifacts.
+- Hermes orchestrates failed-node retry; successful waves are not rerun.
+- The preflight is a decision rule, not a second orchestration engine.
+- YAML `checks:` execute shell commands; use only trusted workflow definitions.
+
+## Security
+
+- Output paths must be safe, unique, and relative to the graph state directory.
+- Shared graph inputs are read-only by contract; each node receives one writable artifact.
+- Keep credentials, logs, profile identities, and runtime state out of repositories.
 
 ## Test
 
@@ -85,14 +127,7 @@ python3 tests/test_loopworks.py
 python3 -m py_compile scripts/*.py
 ```
 
-The suite uses a temporary HOME and does not modify your Hermes state.
-
-## Security
-
-- YAML `checks:` execute shell commands. Only run workflow files you trust.
-- Output paths must be safe, unique, and relative to the graph state directory.
-- Shared graph inputs are read-only by contract; each node receives one writable artifact.
-- Keep credentials, logs, profile identities, and runtime state out of repositories.
+The suite uses temporary directories and does not modify your Hermes state.
 
 ## License
 

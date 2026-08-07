@@ -1,7 +1,7 @@
 ---
 name: loop-graph-system
 description: Use for self-checking loops or parallel worker graph runs.
-version: 0.3.0
+version: 0.4.0
 author: Hermes
 license: Apache-2.0
 metadata:
@@ -11,11 +11,13 @@ metadata:
 
 # Loop & Graph System
 
-## When to Use
+## Operating Contract
 
-Use a loop for repeated work with measurable completion. Use a static graph for specialized or parallel work with artifact handoffs. For a one-shot answer or bounded action, do the task directly.
+Hermes owns classification and invocation. The user should ask for an outcome normally; never require them to name this skill, select a runner, or author YAML. Explicit loop or graph requests are optional operator overrides.
 
-Escalate to a graph only for a real need: distinct specialties, fan-out/join, different model or tool policies, auditable branching, an overloaded verifier, or failure isolation. Add one node per need, never a mesh.
+Before execution, silently choose DIRECT, LOOP, GRAPH, or LOOP+GRAPH. For DIRECT work, do not load or expose orchestration. For the other shapes, apply this skill internally and report the verified result rather than runner ceremony.
+
+Use a loop for repeated work with measurable completion. Use a static graph for specialized or parallel work with artifact handoffs. Escalate to a graph only for a real need: distinct specialties, fan-out/join, different model or tool policies, auditable branching, an overloaded verifier, or failure isolation. Add one node per need, never a mesh.
 
 ## Prerequisites
 
@@ -27,7 +29,9 @@ Escalate to a graph only for a real need: distinct specialties, fan-out/join, di
 
 Definitions live in `~/.hermes/{loops,graphs}/`. State lives in `~/.hermes/state/`.
 
-## How to Run
+## Internal Runner Interface
+
+These commands are for Hermes orchestration and optional advanced operator control—not the normal user quick start.
 
 ```bash
 loop-runner.py tick <name>
