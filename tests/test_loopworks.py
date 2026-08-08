@@ -45,13 +45,14 @@ def main():
             "HOME": str(install_home),
             "HERMES_HOME": str(install_hermes),
         }
-        run_with_env([installer], install_env)
+        run_with_env([installer, "--with-preflight"], install_env)
         assert soul.read_text().count("# Loop/Graph Preflight") == 1
         assert "Never require the user to name the skill" in soul.read_text()
         assert list(install_hermes.glob("SOUL.md.backup-loopworks-*"))
         assert (install_hermes / "plugins/tumnis-loopworks/plugin.yaml").is_file()
         assert (install_hermes / "plugins/tumnis-loopworks/tumnis/hook.py").is_file()
-        run_with_env([installer], install_env)
+        assert (install_home / "bin/graph_runtime.py").is_file()
+        run_with_env([installer, "--with-preflight"], install_env)
         assert soul.read_text().count("# Loop/Graph Preflight") == 1
 
         opt_out_home = HOME / "opt-out-install"
@@ -60,9 +61,30 @@ def main():
             "HOME": str(opt_out_home),
             "HERMES_HOME": str(opt_out_hermes),
         }
-        run_with_env([installer, "--no-preflight"], opt_out_env)
+        run_with_env([installer], opt_out_env)
         assert not (opt_out_hermes / "SOUL.md").exists()
+        assert (opt_out_hermes / "plugins/tumnis-loopworks/plugin.yaml").is_file()
         assert (opt_out_hermes / "skills/autonomous-ai-agents/loop-graph-system/SKILL.md").is_file()
+
+        manual_home = HOME / "manual-install"
+        manual_hermes = manual_home / ".hermes"
+        manual_env = os.environ | {"HOME": str(manual_home), "HERMES_HOME": str(manual_hermes)}
+        run_with_env([installer, "--manual-only"], manual_env)
+        assert not (manual_hermes / "plugins/tumnis-loopworks").exists()
+        assert not (manual_hermes / "SOUL.md").exists()
+        assert (manual_home / "bin/loop-runner.py").is_file()
+
+        uninstall_home = HOME / "uninstall-test"
+        uninstall_hermes = uninstall_home / ".hermes"
+        uninstall_env = os.environ | {"HOME": str(uninstall_home), "HERMES_HOME": str(uninstall_hermes)}
+        run_with_env([installer, "--with-preflight"], uninstall_env)
+        preserved_state = uninstall_hermes / "state/loops/preserve.json"
+        preserved_state.write_text("{}")
+        run_with_env([ROOT / "uninstall.sh", "--remove-preflight"], uninstall_env)
+        assert not (uninstall_hermes / "plugins/tumnis-loopworks").exists()
+        assert not (uninstall_home / "bin/loop-runner.py").exists()
+        assert preserved_state.is_file()
+        assert "# Loop/Graph Preflight" not in (uninstall_hermes / "SOUL.md").read_text()
 
         artifact = HOME / "artifact.txt"
         (LOOPS / "gate.yaml").write_text(textwrap.dedent(f"""
@@ -75,6 +97,8 @@ def main():
         loop = SCRIPTS / "loop-runner.py"
         keep = SCRIPTS / "keep-rate.py"
         graph = SCRIPTS / "graph-runner.py"
+
+        assert "unsafe loop name" in run([loop, "status", "../outside"], 1).stderr
 
         run([loop, "tick", "gate"])
         assert "PASS REJECTED" in run([loop, "pass", "gate"], 1).stdout
@@ -113,10 +137,15 @@ def main():
         """))
         assert "2 nodes, 2 waves" in run([graph, "plan", workflow]).stdout
         emitted = run([graph, "run", workflow]).stdout
-        driver = HOME / "driver.py"
-        driver.write_text(emitted)
-        py_compile.compile(str(driver), doraise=True)
-        assert "handoff check failed" in emitted and "graph:done" in emitted
+        manifest = json.loads(emitted)
+        assert manifest["contract"] == "tumnis.graph/v1"
+        assert len(manifest["waves"]) == 2
+        assert manifest["waves"][0]["delegated_nodes"] == ["a"]
+        assert "delegate_task(tasks=[...])" in manifest["execution"]["reasoning_nodes"]
+        assert manifest["waves"][0]["check_commands"]["a"] == [
+            f'test -s {manifest["waves"][0]["outputs"]["a"]}'
+        ]
+        assert "hermes_tools" not in emitted and "delegation(" not in emitted
 
         invalid = GRAPHS / "invalid.yaml"
         invalid.write_text(textwrap.dedent("""

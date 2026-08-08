@@ -1,24 +1,32 @@
 workflow: research-diamond
 nodes:
   source_a:
+    kind: worker
     task: Research option A using primary sources. Return concise Markdown with citations.
     output: source-a.md
+    output_contract: Cited findings with source URLs and explicit uncertainty.
     checks:
       - test -s "{output}"
   source_b:
+    kind: worker
     task: Research option B using primary sources. Return concise Markdown with citations.
     output: source-b.md
+    output_contract: Cited findings with source URLs and explicit uncertainty.
     checks:
       - test -s "{output}"
   reviewer:
+    kind: verifier
     task: Independently verify both artifacts. Identify supported claims, weak claims, and contradictions.
     depends_on: [source_a, source_b]
     output: reviewer.md
+    output_contract: Independent verdict listing accepted claims, rejected claims, gaps, and required corrections.
     checks:
       - test -s "{output}"
   synthesis:
+    kind: worker
     task: Produce a verdict-bound comparison that honors the reviewer's findings.
     depends_on: [source_a, source_b, reviewer]
     output: synthesis.md
+    output_contract: Final comparison incorporating every reviewer rejection and correction.
     checks:
       - test -s "{output}"

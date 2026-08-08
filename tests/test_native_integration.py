@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -16,6 +17,27 @@ from tumnis.graph_contract import render_graph_contract
 from tumnis.hook import TumnisHook
 from tumnis.models import Classification, Shape
 from tumnis.native_goal import activate_native_goal
+
+
+def test_plugin_entrypoint_loads_as_isolated_package():
+    code = f"""
+import importlib.util, sys
+entry = {str(PLUGIN / '__init__.py')!r}
+spec = importlib.util.spec_from_file_location('_tumnis_plugin_canary', entry, submodule_search_locations=[{str(PLUGIN)!r}])
+module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
+spec.loader.exec_module(module)
+class Context:
+    def __init__(self): self.hooks = []
+    def register_hook(self, name, callback): self.hooks.append((name, callback))
+ctx = Context()
+module.register(ctx)
+assert len(ctx.hooks) == 1 and ctx.hooks[0][0] == 'pre_llm_call'
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code], text=True, capture_output=True, cwd="/tmp"
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_manifest_declares_pre_llm_hook():

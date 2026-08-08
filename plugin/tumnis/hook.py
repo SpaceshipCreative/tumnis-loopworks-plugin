@@ -54,24 +54,34 @@ class TumnisHook:
 
         classification = classify_prompt(prompt)
         if classification is None:
-            classification = self.ambiguous_classifier(prompt)
-        if classification is None or classification.shape is Shape.DIRECT:
+            try:
+                classification = self.ambiguous_classifier(prompt)
+            except Exception:
+                return None
+        if (
+            classification is None
+            or classification.shape is Shape.DIRECT
+            or classification.confidence < 0.80
+        ):
             return None
 
         if classification.shape in {Shape.LOOP, Shape.LOOP_GRAPH}:
-            activated = activate_native_goal(
-                session_id,
-                classification,
-                manager_cls=self.manager_cls,
-                contract_cls=self.contract_cls,
-            )
+            try:
+                activated = activate_native_goal(
+                    session_id,
+                    classification,
+                    manager_cls=self.manager_cls,
+                    contract_cls=self.contract_cls,
+                )
+            except Exception:
+                return None
             if not activated:
                 return None
 
         if classification.shape in {Shape.GRAPH, Shape.LOOP_GRAPH}:
             context = render_graph_contract(
                 loop=classification.shape is Shape.LOOP_GRAPH,
-                durable=False,
+                durable=bool(classification.graph and classification.graph.get("durable")),
             )
         else:
             context = (

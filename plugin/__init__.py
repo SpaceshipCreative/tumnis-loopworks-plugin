@@ -1,6 +1,6 @@
 """Tumnis Loopworks Hermes plugin registration."""
 
-from tumnis.hook import get_default_hook
+from .tumnis.hook import get_default_hook
 
 
 def register(ctx):

@@ -24,6 +24,15 @@ TERMINAL = {"done", "done:no_change", "stopped:max_attempts", "stopped:check_fai
 
 
 def paths(name):
+    if (
+        not name
+        or name in {".", ".."}
+        or os.path.isabs(name)
+        or "/" in name
+        or "\\" in name
+        or ".." in name
+    ):
+        raise SystemExit(f"unsafe loop name: {name!r}")
     return os.path.join(LOOPS, name + ".yaml"), os.path.join(STATE, name + ".json")
 
 

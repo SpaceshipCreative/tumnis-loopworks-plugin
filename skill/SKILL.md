@@ -1,7 +1,7 @@
 ---
 name: loop-graph-system
 description: Use for self-checking loops or parallel worker graph runs.
-version: 0.4.0
+version: 0.5.0
 author: Hermes
 license: Apache-2.0
 metadata:
@@ -17,7 +17,9 @@ Hermes owns classification and invocation. The user should ask for an outcome no
 
 Before execution, silently choose DIRECT, LOOP, GRAPH, or LOOP+GRAPH. For DIRECT work, do not load or expose orchestration. For the other shapes, apply this skill internally and report the verified result rather than runner ceremony.
 
-Use a loop for repeated work with measurable completion. Use a static graph for specialized or parallel work with artifact handoffs. Escalate to a graph only for a real need: distinct specialties, fan-out/join, different model or tool policies, auditable branching, an overloaded verifier, or failure isolation. Add one node per need, never a mesh.
+Use Hermes native goals for repeated work with measurable completion. The plugin activates `GoalManager` and supplies a completion contract; Hermes owns persistence, deterministic gates, the independent goal judge, WAIT barriers, continuations, and bounded turns. Preserve the manual loop runner only for portable/offline workflows and `NO_CHANGE` monitoring.
+
+Use native `delegate_task(tasks=[...])` for independent or specialized reasoning branches. Batch nodes in the same dependency wave, give each fresh child complete context, validate every handoff, and add a fresh-context verifier when deterministic checks cannot prove correctness. Use Kanban goal-mode tasks instead when the graph must survive restarts. Static Tumnis YAML remains the advanced contract surface for reusable artifact DAGs.
 
 ## Prerequisites
 
@@ -54,28 +56,28 @@ keep-rate.py [--strict|--json]
 
 ### Loop
 
-1. Create `~/.hermes/loops/<name>.yaml` with `goal`, non-empty `criteria`, optional `checks`, and `max_attempts`.
-2. Run `loop-runner.py tick <name>` and perform one bounded pass.
-3. Call `pass`, `fail "gap 1; gap 2"`, or `nochange`.
-4. `pass` executes all checks; failures return nonzero and leave the loop pending.
-5. Terminal states require explicit `reset`. Review `status`, checkpoint, and `keep-rate.py --strict`.
-6. Put a cheap deterministic trigger before scheduled agent work whenever possible.
+1. For ordinary LOOP and LOOP+GRAPH requests, let the plugin activate Hermes native `GoalManager`; do not create a parallel Tumnis state machine.
+2. Work toward the native completion contract and provide concrete verification evidence for the Hermes goal judge.
+3. Respect native max turns, WAIT barriers, pause/resume, user preemption, and existing goals.
+4. For monitoring where nothing changed is a legitimate success, preserve Tumnis `NO_CHANGE` telemetry.
+5. Use the manual YAML loop runner only for portable/offline operation: `tick`, then one bounded pass, then `pass`, `fail`, or `nochange`.
 
 ### Graph
 
-1. Define nodes with required `task`, unique safe relative `output`, optional `depends_on`, and optional `checks`. `{output}` expands to the artifact path.
-2. Run `graph-runner.py plan <workflow.yaml>` and inspect the waves.
-3. Run `graph-runner.py run <workflow.yaml>` and execute the emitted code with Hermes `execute_code`.
-4. Each node receives read-only dependency artifact paths and one declared writable artifact.
-5. The driver rejects missing/empty artifacts and failed checks before advancing.
-6. Use plain code for deterministic reduce work such as dedupe, filter, merge, and counts.
-
-The runner handles static DAG edges only. For conditional routing, read the checker/router artifact and dispatch only its named next node. If this becomes common, implement and test routing in the runner before calling it automatic.
+1. For ordinary GRAPH requests, call `delegate_task(tasks=[...])` with all independent reasoning nodes in one batch.
+2. Give each child one bounded goal, complete context, and one declared handoff. Children start fresh and know no parent history.
+3. Validate returned count, schema validity, claims, artifact handles, and deterministic checks before advancing.
+4. Add a fresh-context verifier child only when deterministic verification is insufficient or review is explicitly required.
+5. Preserve successful handoffs and retry only failed or rejected nodes.
+6. Use `execute_code` for deterministic reduce work such as dedupe, filter, merge, and counts.
+7. For reusable static DAGs, define `kind: worker | verifier | reduce`, `task`, unique safe `output`, optional `output_contract`, `depends_on`, `output_schema`, and trusted `checks`.
+8. `graph-runner.py run` emits a `tumnis.graph/v1` delegation manifest. The parent executes each wave using native tools; standalone Python cannot invoke Hermes model tools.
+9. Use Kanban dependencies and goal-mode workers for durable or restart-safe graphs.
 
 ## Pitfalls
 
-- `graph-runner.py run` emits code; it does not directly call delegates.
-- YAML checks execute shell commands; trust the workflow source.
+- `graph-runner.py run` emits a native delegation manifest; the parent Hermes agent performs actual `delegate_task` calls.
+- YAML checks execute shell commands; trust the workflow source and never derive checks from classifier output.
 - Sequence is not dependency. Fake edges serialize work and increase failure surface.
 - Workers can write off-path; verify declared artifacts before dependent waves.
 - Stale delegation batches can still report completion; confirm the live ID.
@@ -86,6 +88,6 @@ The runner handles static DAG edges only. For conditional routing, read the chec
 - Loop `pass` is rejected when any deterministic check fails.
 - Checkpoints update on every state change.
 - `done:no_change` remains terminal.
-- Graph planning rejects cycles, unknown dependencies, unsafe/duplicate outputs, and invalid checks.
-- Emitted drivers reject empty handoffs and failed checks.
+- Graph planning rejects cycles, unknown dependencies, unsafe/duplicate outputs, invalid checks, invalid node kinds, and verifier nodes without dependencies.
+- Delegation manifests batch same-wave workers, isolate reducer nodes, and carry declared output contracts.
 - `keep-rate.py --strict` exits 2 when any workflow falls below 50%.
