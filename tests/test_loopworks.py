@@ -49,6 +49,8 @@ def main():
         assert soul.read_text().count("# Loop/Graph Preflight") == 1
         assert "Never require the user to name the skill" in soul.read_text()
         assert list(install_hermes.glob("SOUL.md.backup-loopworks-*"))
+        assert (install_hermes / "plugins/tumnis-loopworks/plugin.yaml").is_file()
+        assert (install_hermes / "plugins/tumnis-loopworks/tumnis/hook.py").is_file()
         run_with_env([installer], install_env)
         assert soul.read_text().count("# Loop/Graph Preflight") == 1
 

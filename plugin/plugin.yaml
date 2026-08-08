@@ -1,0 +1,5 @@
+name: tumnis-loopworks
+version: 0.5.0
+description: Automatic native Hermes loop and graph orchestration
+provides_hooks:
+  - pre_llm_call

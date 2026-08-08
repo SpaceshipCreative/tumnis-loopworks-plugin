@@ -1,10 +1,17 @@
-# Tumnis Loopworks
+# Tumnis Loopworks Plugin
 
-*A quiet guide through branching systems, turning uncertain paths into verified outcomes.*
+*Automatic native loop and graph orchestration for Hermes Agent.*
 
-Tumnis Loopworks adds automatic loop and graph orchestration to [Hermes Agent](https://github.com/NousResearch/hermes-agent).
+Tumnis Loopworks Plugin is the Hermes-native integration layer for [Tumnis Loopworks](https://github.com/SpaceshipCreative/tumnis-loopworks). It classifies ordinary prompts as DIRECT, LOOP, GRAPH, or LOOP+GRAPH without requiring `/goal`, then combines Tumnis policy with Hermes' existing strengths:
 
-You do not need to invoke a skill, choose a runner, or write workflow YAML. Ask Hermes for the outcome you want. Hermes silently evaluates the request and uses the simplest execution shape that can finish and verify it:
+- Hermes `GoalManager`, completion contracts, deterministic gates, and independent goal judge for loops
+- Hermes `delegate_task` subagents for in-session graph fan-out and fresh-context verification
+- Hermes Kanban for durable dependency workflows
+- Tumnis `NO_CHANGE`, keep-rate telemetry, static DAG contracts, safe artifact paths, and validated handoffs
+
+No Hermes Core patch or fork is required.
+
+The plugin chooses the simplest execution shape that can finish and verify the request:
 
 - **DIRECT** — one bounded action
 - **LOOP** — repeated or iterative work with measurable gates and a hard stop
@@ -25,20 +32,21 @@ Simple requests stay simple. Orchestration is applied only when it earns its kee
 ### One-time setup
 
 ```bash
-git clone https://github.com/SpaceshipCreative/tumnis-loopworks.git
-cd tumnis-loopworks
+git clone https://github.com/SpaceshipCreative/tumnis-loopworks-plugin.git
+cd tumnis-loopworks-plugin
 ./install.sh
 ```
 
 The installer:
 
-- installs the Loopworks skill for Hermes
-- installs automatic prompt evaluation in `SOUL.md`
+- installs the standalone Hermes plugin under `$HERMES_HOME/plugins/tumnis-loopworks/`
+- installs the Loopworks policy skill for fallback and advanced/manual workflows
+- optionally installs the legacy SOUL preflight block
 - copies the loop, graph, and keep-rate runners to `~/bin/`
 - creates the required workflow and state directories
 - backs up an existing `SOUL.md` before changing it
 
-Start a fresh Hermes session or run `/reset` once after installation.
+Enable the plugin once with `hermes plugins enable tumnis-loopworks`, then start a fresh Hermes session or run `/reset`.
 
 To install only the skill and runners without automatic prompt evaluation:
 

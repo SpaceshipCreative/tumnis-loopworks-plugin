@@ -20,6 +20,7 @@ python3 -c 'import yaml' 2>/dev/null || {
 
 mkdir -p "$HOME/bin" \
   "$HERMES_HOME/skills/autonomous-ai-agents/loop-graph-system" \
+  "$HERMES_HOME/plugins/tumnis-loopworks" \
   "$HERMES_HOME/loops" "$HERMES_HOME/graphs" \
   "$HERMES_HOME/state/loops" "$HERMES_HOME/state/graphs"
 
@@ -27,6 +28,7 @@ install -m 0755 "$ROOT/scripts/graph-runner.py" "$HOME/bin/graph-runner.py"
 install -m 0755 "$ROOT/scripts/loop-runner.py" "$HOME/bin/loop-runner.py"
 install -m 0755 "$ROOT/scripts/keep-rate.py" "$HOME/bin/keep-rate.py"
 install -m 0644 "$ROOT/skill/SKILL.md" "$HERMES_HOME/skills/autonomous-ai-agents/loop-graph-system/SKILL.md"
+cp -R "$ROOT/plugin/." "$HERMES_HOME/plugins/tumnis-loopworks/"
 
 if $WITH_PREFLIGHT; then
   soul="$HERMES_HOME/SOUL.md"
@@ -47,5 +49,7 @@ fi
 printf 'Installed Tumnis Loopworks\n'
 printf '  runners: %s/bin\n' "$HOME"
 printf '  skill:   %s/skills/autonomous-ai-agents/loop-graph-system/SKILL.md\n' "$HERMES_HOME"
+printf '  plugin:  %s/plugins/tumnis-loopworks\n' "$HERMES_HOME"
 $WITH_PREFLIGHT && printf '  preflight: %s/SOUL.md\n' "$HERMES_HOME"
+printf 'Enable once with: hermes plugins enable tumnis-loopworks\n'
 printf 'Start a fresh Hermes session or run /reset.\n'
